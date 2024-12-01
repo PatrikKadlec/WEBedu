@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="cs">
+    <?php require ROOT . '/Styles/Templates/Blocks/Head.phtml'; ?>
+    <body>
+        <?php require ROOT . '/Styles/Templates/Blocks/Navbar.phtml'; ?>
+        <div class="page">
+            <div class="page-header">
+                <?php if ($this->data->get('welcome_name')) : ?>
+                    <h1>Vítej zpět, <?= $this->data->get('welcome_name') ?>! 😎</h1>
+                <?php else : ?>
+                    <h1><?= $this->title ?></h1>
+                <?php endif; ?>
+                <span>
+                    <span class="word w-1">HTML</span>
+                    <span class="word w-2">CSS</span>
+                    <span class="word w-3">JavaScript</span>
+                    <span class="word w-3">PHP</span>
+                    <span class="word w-4">OOP</span>
+                    <span class="word w-5">API</span>
+                </span>
+            </div>
+            <div class="page-body">
+                <?php require ROOT . $template; ?>
+            </div>
+        </div>
+        <?php require ROOT . '/Styles/Templates/Blocks/Bottom.phtml'; ?>
+    </body>
+</html>

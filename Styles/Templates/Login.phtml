@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="cs" class="html-login">
+    <?php require ROOT . '/Styles/Templates/Blocks/Head.phtml'; ?>
+    <body>
+        <div class="page page-stretch">
+            <div class="page-header">
+                <h1>WEBedu</h1>
+            </div>
+            <div class="page-body">
+                <div class="page-block-list">
+                    <div class="block">
+                        <div class="block-title">
+                            <span class="block-title">Vítejte na webových stránkách, které slouží pro výuku webových aplikací na škole SPŠ Karviná. Pro přístup na web se přihlašte prostřednictvím školního účtu.</span>
+                        </div>
+                        <div class="block-body">
+                            <a href="<?= $this->data->get('href') ?>">Přihlásit se</a>
+                            <br>
+                            <div class="switch-theme">
+                                <div class="switch-theme-button">
+                                    <div class="dot"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script src="/Styles/Themes/Script.min.js"></script>
+    </body>
+</html>
