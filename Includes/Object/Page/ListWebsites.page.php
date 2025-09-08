@@ -53,12 +53,69 @@ class ListWebsites extends \App\Page\Page
 
         $data->set('websiteName', explode('-', $team)[3] ?? $user);
 
-        foreach (glob(ROOT . '/Websites/' . ($team ?: $user) . '/*', GLOB_ONLYDIR) as $folder)
+        $branches = githubAPI('/repos/spskarvina/WEB-' . $user . '/git/refs/heads');
+        foreach ($branches as $branch)
         {
+            $branchName = str_replace('refs/heads/', '', $branch['ref']);
+            $branchNameURL = $branchName;
+            if (count(explode('/', $branchNameURL)) > 1) {
+                $branchNameURL = explode('/', $branchNameURL)[1];
+            }
+            $commit = githubAPI('/repos/spskarvina/WEB-' . $user . '/commits/' . $branch['object']['sha']);
+
+            $url = '/Websites/' . $user . '/' . $branchNameURL . '/';
+
+            $folderExists = is_dir(ROOT . $url);
+            if (!$folderExists) {
+                continue;
+            }
+            
+            $files = glob(ROOT . $url . '*');
+
+            $indexFound = false;
+            $appFolderFound = false;
+            foreach ($files as $file) {
+                if (str_ends_with($file, '/index.php') or str_ends_with($file, '/index.html')) {
+                    $indexFound = true;
+                    break;
+                }
+            }
+
+            if (!$indexFound) {
+                foreach ($files as $file) {
+                    if (str_ends_with($file, '/app')) {
+
+                        $files = glob(ROOT . $url . 'app/*');
+                        foreach ($files as $file) {
+                            if (str_ends_with($file, '/index.php') or str_ends_with($file, '/index.html')) {
+                                $appFolderFound = true;
+                                $url .= 'app/';
+                                break 2;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!$indexFound and !$appFolderFound) {
+                $url = '';
+            }
+
+            $listOfCommits = githubAPI('/repos/spskarvina/WEB-' . $user . '/commits?sha=' . $branchName);
+            if (!$listOfCommits) {
+                continue;
+            }
+
             array_push($list, [
-                'login' => $user, 
-                'website_name' => basename($folder)
+                'login' => $user,
+                'commitMessage' => $commit['commit']['message'],
+                'commitDate' => date_format(date_create($commit['commit']['author']['date']), 'd. m. Y H:i'),
+                'website_name' => $branchName,
+                'url' => $url,
+                'urlDefault' => $indexFound,
+                'urlApp' => $appFolderFound
             ]);
+
         }
 
         $data->set('websites', $list);

@@ -3,5 +3,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WEBEdu - <?= $this->data->get('title') ?></title>
 
+    <script>
+        var faviconLightHref = '/Styles/Themes/Favicon_light.svg';
+        var faviconDarkHref = '/Styles/Themes/Favicon_dark.svg';
+
+        var icon = document.createElement('link');
+        icon.rel = 'icon';
+        icon.href = faviconLightHref;
+        console.log(document.cookie);
+        if (document.cookie.includes('theme=dark')) {
+            document.querySelector('html').classList.toggle('html-theme-dark');
+            icon.href = faviconDarkHref;
+        }
+        document.head.appendChild(icon);
+    </script>
+
     <link rel="stylesheet" href="/Styles/Themes/Stylesheet.min.css">
 </head>

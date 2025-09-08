@@ -130,7 +130,7 @@ class Panel extends Page
         $data->set('ftp.username', 'N/A');
         $data->set('ftp.password', 'N/A');
         $variables = githubAPI('/repos/spskarvina/WEB-' . $data->get('username') . '/actions/variables');
-        foreach ($variables['variables'] as $var) {
+        foreach ($variables['variables'] ?? [] as $var) {
             
             if (!str_starts_with($var['name'], 'FTP_')) {
                 continue;
@@ -138,8 +138,8 @@ class Panel extends Page
             $data->set(str_replace('_', '.', strtolower($var['name'])), $var['value']);
         }
 
+
         $repositories = githubAPI('/orgs/spskarvina/repos?per_page=200&visibility=al');
-        
         $found = false;
         foreach($repositories as $repo) {
             if ($repo['name'] == 'WEB-' . $data->get('username')) {
@@ -148,10 +148,14 @@ class Panel extends Page
                 break;
             }
         } 
-        
         $data->set('repository_exists', $found);
-        
-        
+        $branchesRoot = array_column(githubAPI('/repos/spskarvina/WEB/git/refs/heads'), 'ref');
+        $branchesUser = array_column(githubAPI('/repos/spskarvina/WEB-' . $data->get('username') . '/git/refs/heads'), 'ref');
+        $diff = array_diff($branchesRoot, $branchesUser);
+        $data->set('repository_synchronized', empty($diff));
+
+
+
         
         $data->set('files',  $getNumberOfFiles('/Websites/' . $data->get('username') . '/'));
         $data->set('size',  str_replace('.', ',', (string)((float)($size / 1024))));
@@ -179,5 +183,65 @@ class Panel extends Page
 
             $data->set('modified', $modifiedValue);
         }
+    }
+
+    public function action_createRepository( \App\Model\Data $data ) {
+
+        $repositoryName = 'WEB-' . $data->get('username');
+        
+        // Create repository
+        githubAPI('/repos/spskarvina/WEB/forks', [
+            'organization' => 'spskarvina',
+            'name' => $repositoryName,
+            'default_branch_only ' => false
+        ], 'POST');
+
+        // Create FTP_USERNAME variable
+        githubAPI('/repos/spskarvina/' . $repositoryName . '/actions/variables', [
+            'name' => 'FTP_USERNAME',
+            'value' => 'w268405_' . $data->get('username')
+        ], 'POST');
+
+        // Create FTP_SERVER variable
+        githubAPI('/repos/spskarvina/' . $repositoryName . '/actions/variables', [
+            'name' => 'FTP_SERVER',
+            'value' => '268405.w5.wedos.net'
+        ], 'POST');
+
+        // Create FTP_PASSWORD variable
+        githubAPI('/repos/spskarvina/' . $repositoryName . '/actions/variables', [
+            'name' => 'FTP_PASSWORD',
+            'value' => '-'
+        ], 'POST');
+
+        // Add owner to collaborator
+        githubAPI('/repos/spskarvina/' . $repositoryName . '/collaborators/' . $data->get('username'), [
+            'permission' => 'maintain'
+        ], 'PUT');
+
+        return true;
+    }
+
+    public function action_synchronizeRepository( \App\Model\Data $data ) {
+
+        $branchesRoot = array_column(githubAPI('/repos/spskarvina/WEB/git/refs/heads'), 'red');
+        $branchesUser = array_column(githubAPI('/repos/spskarvina/WEB-' . $data->get('username') . '/git/refs/heads'), 'ref');
+
+        $diff = array_diff($branchesRoot, $branchesUser);
+
+        foreach ($diff as $branch) {
+
+            $branch = str_replace('refs/heads/', '', $branch);
+
+            $lastCommit = githubAPI('/repos/spskarvina/WEB/git/refs/heads/' . $branch);
+
+            $sha = $lastCommit['object']['sha'];
+            $response = githubAPI('/repos/spskarvina/WEB-' . $data->get('username') . '/git/refs', [
+                'ref' => 'refs/heads/' . $branch,
+                'sha' => $sha
+            ], 'POST');
+        }
+
+        return true;
     }
 }

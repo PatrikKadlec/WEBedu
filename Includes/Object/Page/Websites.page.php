@@ -24,7 +24,7 @@ class Websites extends Page
      */
     public function body( \App\Model\Data $data )
     {
-        define('PATH', $_SERVER['REQUEST_URI']);
+        define('PATH', explode('?', $_SERVER['REQUEST_URI'])[0]);
 
         $arrowBack = '<a class="arrow-back" href="/" style="font-family:Arial;z-index:999;display:block;position:fixed;bottom:2rem;right:2rem;background-color:#ff581c;border-radius:3px;box-shadow:1px 1px 20px #00000040;padding:0.6rem 0.8rem;font-size:1rem;text-decoration:none;font-weight:600;color:white;transition:0.3s ease background;}.arrow-back:hover{background:#d16717;color:white;">< Zpět</a>';
 
@@ -33,14 +33,14 @@ class Websites extends Page
             if (file_exists(ROOT . PATH . '/index.html'))
             {
                 require ROOT . PATH . '/index.html';
-                echo $arrowBack;
+                //echo $arrowBack;
                 exit();
             }
 
             if (file_exists(ROOT . PATH . '/index.php'))
             {
                 require ROOT . PATH . '/index.php';
-                echo $arrowBack;
+                //echo $arrowBack;
                 exit();
             }
 

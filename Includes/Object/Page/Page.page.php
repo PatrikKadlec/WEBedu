@@ -53,6 +53,18 @@ abstract class Page
         }
     }
 
+    public function actions() {
+
+        if (!isset($_GET['action']) or empty($_GET['action'])) {
+            return;
+        }
+
+        if (method_exists($this, 'action_' . $_GET['action'])) {
+            $return = $this->{'action_' . $_GET['action']}($this->data);
+            $this->data->set('status', $return === true ? 'ok' : 'error');
+        }
+    }
+
     /**
      * Ends page and display page
      * 
@@ -62,17 +74,22 @@ abstract class Page
      */
     public function end()
     {
-        if (isset($_GET['ASXX'])) {
-            echo $this->title ?? '';
+        if (IN_AJAX) {
+
+            ob_start();
+            require ROOT . '/Styles/Templates' . $this->data->get('template');
+            $content = ob_get_clean();
+
+            echo json_encode([
+                'html' => $content,
+                'title' => $this->title,
+                'status' => $this->data->get('status') ?: 'ok'
+            ]);
+
             exit();
         }
 
         $template = '/Styles/Templates' . $this->data->get('template');
-        if (IN_AJAX) {
-            require ROOT . '/Styles/Templates' . $this->data->get('template');
-            exit();
-        }
-
         if ($this->useBody == false) {
             require ROOT . $template;
             exit();

@@ -26,7 +26,7 @@ ini_set('opcache.enable_cli', 0);
 @ini_set('session.use_cookies ', 1);
 
 define('IN_ACTION', isset($_GET['action']) && !empty($_GET['action']));
-define('IN_AJAX', isset($_GET['AX']) || isset($_GET['ASX']));
+define('IN_AJAX', isset($_GET['AX']) || isset($_GET['action']));
 
 $settings = json_decode(file_get_contents(ROOT . '/Includes/.htdata.json'), true);
 
@@ -194,8 +194,8 @@ function cacheRequest($URL, $response) {
     file_put_contents(ROOT . '/Includes/Cache.json', json_encode($JSON));
 }
 
-function githubAPI( string $URL, array $data = [], string $method = 'GET')
-{
+function githubAPI( string $URL, array $data = [], string $method = 'GET') {
+    
     if (!$data) {
 
         $fromCache = getCachedRequest($URL);
@@ -204,12 +204,17 @@ function githubAPI( string $URL, array $data = [], string $method = 'GET')
             return $fromCache;
         }
 
+        $params = '?per_page=100';
+        if (str_contains($URL, '?')) {
+            $params = '&per_page=100';
+        }
 
-        $response = json_decode(file_get_contents('https://api.github.com' . $URL . '?per_page=100', false, buildGETContext()) ?: '{}', true);
+        $response = json_decode(@file_get_contents('https://api.github.com' . $URL . $params, false, buildGETContext()) ?: '{}', true);
         cacheRequest($URL, $response);
         return $response;
     }
 
+    
     $context = match($method) {
         'POST' => buildPOSTContext($data),
         'PUT' => buildPUTContext($data),
@@ -286,104 +291,10 @@ if (in_array($git->login, ['PatrikKadlec']))
     $data->set('admin', true);
 }
 
-if (isset($_GET['action'])) {
-
-    $status = 'error';
-
-    switch ($_GET['action']) {
-
-        case 'signOut':
-            $_SESSION = [];
-            echo json_encode(['status' => 'ok', 'refresh' => true]);
-            exit();
-        break;
-
-        case 'createRepository':
-
-            $repositoryName = 'WEB-' . $gitUser->login;
-        
-            // Create repository
-            githubAPI('/repos/spskarvina/WEB/forks', [
-                'organization' => 'spskarvina',
-                'name' => $repositoryName,
-                'default_branch_only ' => false
-            ], 'POST');
-
-            // Create FTP_USERNAME variable
-            githubAPI('/repos/spskarvina/' . $repositoryName . '/actions/variables', [
-                'name' => 'FTP_USERNAME',
-                'value' => 'w268405_' . $gitUser->login
-            ], 'POST');
-
-            // Create FTP_SERVER variable
-            githubAPI('/repos/spskarvina/' . $repositoryName . '/actions/variables', [
-                'name' => 'FTP_SERVER',
-                'value' => '268405.w5.wedos.net'
-            ], 'POST');
-
-            // Create FTP_PASSWORD variable
-            githubAPI('/repos/spskarvina/' . $repositoryName . '/actions/variables', [
-                'name' => 'FTP_PASSWORD',
-                'value' => '-'
-            ], 'POST');
-
-            // Add owner to collaborator
-            githubAPI('/repos/spskarvina/' . $repositoryName . '/collaborators/' . $gitUser->login, [
-                'permission' => 'maintain'
-            ], 'PUT');
-            
-            $status = 'ok';
-
-        break;
-    }
-
-    $URL = mb_substr($_SERVER['HTTP_REFERER'], 0, -1) . $_SERVER['REQUEST_URI'];
-    $URL = str_replace('&action=', '&', $URL);
-    $URL = str_replace('?action=', '?', $URL);
-    $URL .= '&accessToken=' . $_SESSION['access_token'] . '&ASX';
-    echo json_encode([
-        'html' => file_get_contents($URL, false, buildGETContext()),
-        'url' => $URL,
-        'status' => $status
-    ]);
-
-    exit();
-
-}
-
-
-if (isset($_GET['AX'])) {
-
-    unset($_GET['AX']);
-    $_GET['ASX'] = '';
-    $_GET['accessToken'] = $_SESSION['access_token'];
-    $URLContent = 'http://' . $_SERVER['HTTP_HOST'] . $route->getPath() . '?' . http_build_query($_GET);
-
-    unset($_GET['ASX']);
-    $_GET['ASXX'] = '';
-    $URLTitle = 'http://' . $_SERVER['HTTP_HOST'] . $route->getPath() . '?' . http_build_query($_GET);
-
-    echo json_encode([
-        'html' => file_get_contents($URLContent, false, buildGETContext()),
-        'title' => file_get_contents($URLTitle, false, buildGETContext()),
-        'status' => 'ok'
-    ]);
-
-    exit();
-}
-
-$route->set('/form/novy-tym/', '/Form/Team');
-$route->set('/form/novy-ukol/', '/Form/Work');
-$route->set('/form/novy-web/', '/Form/Website');
-
 $route->set('/weby', '/ListWebsites');
 $route->set('/studenti', '/Students');
-
 $route->set('/info', '/Info');
-$route->set('/page/weby/', '/ListWebsites');
-$route->set('/page/info/', '/Info');
-$route->set('/page/panel/', '/Panel');
-$route->set('/page/studenti/', '/Students');
+$route->set('/projekty', '/Projects');
 
 // Zobrazení webových stránek studenů - NEMAZAT!
 $route->set('/Websites', '/Websites');

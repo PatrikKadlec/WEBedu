@@ -48,6 +48,7 @@ class Route
      
             $page = new $page($this->data);
             $page->body($this->data);
+            $page->actions();
             $page->end();
 
             exit(0);
@@ -60,6 +61,7 @@ class Route
         
         $page = new $page($this->data);
         $page->body($this->data);
+        $page->actions();
         $page->end();
         
         exit(0);
